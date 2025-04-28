@@ -185,24 +185,22 @@ if soa_file and allocations_file:
 
             SOA_Analysis_Template = soa_Template_ToUplaod[final_columns_for_Analysis]
 
-
-            output_excel = get_reconciliation_output(SOA, ALLOCATIONS, merged, disputes, refunds_and_NRB, SOA_TSP_final)
-            template_excel = get_template_output(SOA_Analysis_Template)
-
-
+            st.session_state.output_excel = get_reconciliation_output(SOA, ALLOCATIONS, merged, disputes, refunds_and_NRB, SOA_TSP_final)
+            st.session_state.template_excel = get_template_output(SOA_Analysis_Template)
 
             st.success("✅ Reconciliation Completed Successfully!")
 
-            st.download_button(
-                label="📥 Download Reconciliation Report",
-                data=output_excel,
-                file_name=output_filename,
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            )
+    if "output_excel" in st.session_state and "template_excel" in st.session_state:
+        st.download_button(
+            label="📥 Download Reconciliation Report",
+            data=st.session_state.output_excel,
+            file_name=output_filename,
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
 
-            st.download_button(
-                label="📥 Download Template Report",
-                data=template_excel,
-                file_name=template_filename,
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            )
+        st.download_button(
+            label="📥 Download Template Report",
+            data=st.session_state.template_excel,
+            file_name=template_filename,
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )            
