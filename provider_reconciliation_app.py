@@ -2,10 +2,11 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from io import BytesIO
+import zipfile
 
 
 st.set_page_config(page_title="NUITEE -Provider- Reconciliation Tool Ay", layout="centered")
-st.title("🧮 SOA & Allocation Reconciliation Tool For Slaves")
+st.title("🧮 Provider Reconciliation APP")
 st.write("Upload your files below and click **Start Reconciliation** to generate your reports.")
 
 
@@ -55,10 +56,12 @@ if soa_file and allocations_file:
             ALLOCATIONS = pd.read_excel(allocations_file, header=0)
 
             if nrb_file:
-                NRB = pd.read_excel(nrb_file, header=0, sheet_name="Rfunds & Not Requested Bkgs", usecols="A:O")
-                NRB.columns = NRB.columns.str.strip()
-                NRB["Nuitee Booking Id"] = NRB["Nuitee Booking Id"].astype(str).str.strip()
-                NRB["Nuitee Booking Id"] = pd.to_numeric(NRB["Nuitee Booking Id"], errors="coerce")
+                NRB_full = pd.read_excel(nrb_file, header=0, sheet_name="Refunds & Not Requested Bkgs")
+                NRB_full.columns = NRB_full.columns.str.strip()
+                NRB_full["Nuitee Booking Id"] = NRB_full["Nuitee Booking Id"].astype(str).str.strip()
+                NRB_full["Nuitee Booking Id"] = pd.to_numeric(NRB_full["Nuitee Booking Id"], errors="coerce")
+                NRB_full["soa_amount"] = NRB_full["Difference"]
+                NRB = NRB_full.loc[:, 0:15]
             else:
                 NRB = pd.DataFrame(columns=[
                     "Nuitee Booking Id", "Provider", "Provider Booking Id", "Reservation Date", "Hotel Name", "City Name",
@@ -189,18 +192,21 @@ if soa_file and allocations_file:
             st.session_state.template_excel = get_template_output(SOA_Analysis_Template)
 
             st.success("✅ Reconciliation Completed Successfully!")
-
+         
     if "output_excel" in st.session_state and "template_excel" in st.session_state:
-        st.download_button(
-            label="📥 Download Reconciliation Report",
-            data=st.session_state.output_excel,
-            file_name=output_filename,
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
+        zip_buffer = BytesIO()
+
+        with zipfile.ZipFile(zip_buffer, "w") as zip_file:
+        
+            zip_file.writestr(output_filename, st.session_state.output_excel.getvalue())
+            
+            zip_file.writestr(template_filename, st.session_state.template_excel.getvalue())
+
+        zip_buffer.seek(0)
 
         st.download_button(
-            label="📥 Download Template Report",
-            data=st.session_state.template_excel,
-            file_name=template_filename,
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )            
+            label="📥 Download All Reports (ZIP)",
+            data=zip_buffer,
+            file_name="Reconciliation_Reports.zip",
+            mime="application/zip"
+        )
